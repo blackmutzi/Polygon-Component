@@ -1,0 +1,144 @@
+#ifndef ITEMPDATABASE_TEMP
+#define ITEMPDATABASE_TEMP
+
+using namespace Arch;
+
+template< typename Container >
+ITempDatabase< Container >::ITempDatabase( const std::string & name )
+    : IDatabase( name ) , m_component_id_count(0)
+{}
+
+template < typename Container >
+ITempDatabase<Container>::~ITempDatabase(){}
+
+
+template< typename Container >
+void ITempDatabase< Container >::countReset(void)
+{
+    m_component_id_count = 0;
+}
+
+template< typename Container>
+void ITempDatabase< Container >::finish(void)
+{
+    for( Container * container : m_container_list )
+            delete container;
+
+    m_container_map.clear();
+    m_container_vector.clear();
+    m_container_list.clear();
+
+    m_component_id_count = 0;
+}
+
+template< typename Container >
+void ITempDatabase< Container >::addContainer( IComponent * component )
+{
+    //------------------------------
+    // next id
+    //------------------------------
+    m_component_id_count++;
+
+    //------------------------------
+    // container setID
+    //------------------------------
+    component->setID( m_component_id_count );
+
+    //------------------------------
+    // container set Database Name
+    //------------------------------
+    component->setDatabaseName( getDatabaseName() );
+
+    //------------------------------
+    // Cast Component to Container
+    //------------------------------
+    Container * container = ( Container * ) component ;
+
+    m_container_map.insert( typename ContainerMap::value_type( component->getID() , container ) );
+    m_container_vector.push_back( container );
+    m_container_list.push_back( container );
+}
+
+template< typename Container >
+IComponent * ITempDatabase< Container >::getContainer( unsigned int id )
+{
+    typename ContainerMap::iterator con_it = m_container_map.find( id );
+
+    if( con_it != m_container_map.end() )
+            return con_it->second;
+
+    return nullptr;
+}
+
+template< typename Container >
+bool ITempDatabase< Container >::hasContainer( unsigned int id )
+{
+    if( getContainer( id ) == nullptr )
+            return false;
+
+    return true;
+}
+
+template< typename Container >
+void ITempDatabase< Container >::removeContainer( unsigned int id )
+{
+    if( hasContainer( id ) )
+    {
+        IComponent * component = getContainer( id );
+
+        removeFromMap   ( id );
+        removeFromVector( component );
+        removeFromList  ( component );
+    }
+}
+
+template< typename Container >
+void ITempDatabase< Container >::removeFromMap(unsigned int id )
+{
+    m_container_map.erase( id );
+}
+
+template< typename Container>
+void ITempDatabase< Container >::removeFromVector( IComponent * container )
+{
+    IComponent * _search    = nullptr;
+
+    for( int count=0; count < m_container_vector.size(); count++)
+    {
+        _search = ( IComponent *) m_container_vector[ count ];
+
+        if( _search->getID() == container->getID() )
+        {
+            m_container_vector.erase( m_container_vector.begin() + count );
+            break;
+        }
+    }
+}
+
+template< typename Container >
+void ITempDatabase< Container >::removeFromList( IComponent * _container )
+{
+    Container * container = ( Container * ) _container;
+    m_container_list.remove( container );
+}
+
+template< typename Container >
+std::map< unsigned int , Container * > ITempDatabase< Container >::getContainerMap(void)
+{
+    return m_container_map;
+}
+
+template < typename Container >
+std::vector< Container * > ITempDatabase< Container >::getContainerVector(void)
+{
+    return m_container_vector;
+}
+
+template < typename Container >
+std::list< Container * > ITempDatabase< Container >::getContainerList(void)
+{
+    return m_container_list;
+}
+
+#endif // ITEMPDATABASE_TEMP
+

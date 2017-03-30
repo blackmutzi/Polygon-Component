@@ -1,0 +1,42 @@
+#ifndef COMPONENTBUILDER_TEMP
+#define COMPONENTBUILDER_TEMP
+
+using namespace Arch;
+
+template < typename Component >
+Component * ComponentBuilder::createComponent( const std::string & database_name )
+{
+    DatabaseManager * manager    = DatabaseManager::getSingletonPtr();
+    IDatabase       * database   = nullptr;
+    Component       * component  = new Component();
+    IComponent      * icomponent = ( IComponent * ) component;
+
+    if( manager->hasDatabase( database_name ) )
+    {
+       database = manager->getDatabase( database_name );
+       database->addContainer( icomponent );
+       return component;
+    }
+    else
+    {
+       database = createDatabase< Component >( database_name );
+       database->addContainer( icomponent );
+       return component;
+    }
+
+   delete component;
+   return nullptr;
+}
+
+template < typename Component >
+IDatabase * ComponentBuilder::createDatabase(const string &database_name)
+{
+    DatabaseManager * manager = DatabaseManager::getSingletonPtr();
+    ITempDatabase< Component > * database = new ITempDatabase < Component >( database_name );
+
+    manager->addDatabase( database );
+    return ( IDatabase * ) database;
+}
+
+#endif // COMPONENTBUILDER_TEMP
+
